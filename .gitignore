@@ -1,0 +1,16 @@
+# traces/ 只是"提炼用的原料"，不进仓库。
+# 里面有 Lead 与各 agent 的会话内容、个人路径、项目隐私。
+# 仓库里只保留**提炼后**的方法论（SKILL.md / references/ / scripts/）。
+traces/
+traces/*.jsonl
+traces/*.zstd
+*.jsonl.zstd
+
+# 临时
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Python 缓存
+__pycache__/
+*.pyc
