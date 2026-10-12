@@ -24,6 +24,7 @@
 | 要写校验脚本 | [`references/acceptance-metrics.md`](references/acceptance-metrics.md)（算法 + 阈值怎么定 + 复算命令） |
 | ffmpeg 报奇怪的错 | [`references/ffmpeg-pitfalls.md`](references/ffmpeg-pitfalls.md) |
 | 要挑素材 / 定节奏 | [`references/selection-and-structure.md`](references/selection-and-structure.md) |
+| 要拆解对标视频 | [`references/benchmark-breakdown.md`](references/benchmark-breakdown.md)（量什么、怎么判、怎么映射成改刀与补拍清单） |
 | 配乐 / 扒谱 / 生成 | [`references/music-and-score.md`](references/music-and-score.md)（对标拆解→配方→ABC→回读验收） |
 | 设计素材库 / 用 GPS | [`references/data-geo-schema.md`](references/data-geo-schema.md)（schema、轨迹口径、位置校验） |
 | 要多人/多 agent 协作 | [`SKILL.md`](SKILL.md) §8 + [`references/agent-orchestration.md`](references/agent-orchestration.md) |
