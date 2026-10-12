@@ -54,7 +54,7 @@ references/
   selection-and-structure.md           选片判据、结构详略预算、一次完整迭代的形态
   agent-orchestration.md               多 agent 协作：什么时候派、怎么分工、怎么复核、中断恢复
   music-and-score.md                   配乐：对标拆解定配方、手写 ABC 生成、纯器乐双证据、铺床余量
-  data-geo-schema.md                   素材库 schema、GPS 轨迹与口径、位置校验、embedding（未采用）
+  data-geo-schema.md                   素材库 schema、GPS 轨迹与口径、位置校验、embedding（已实测）
   provenance.md                        结论的来源类型与核实状态（哪些没核实）
 scripts/
   README.md                            关键验收工具清单 + 换项目要改什么
@@ -64,6 +64,7 @@ scripts/
   sharp_check.py / shake_rank2.py      锐度隔离测试 / 相位相关抖动排序
   mlib.py                              公共库（路径、ffprobe、SQLite 连接）
   unzstd.js / sess_recover.py          把中断的并行任务的结论从会话记录里捞回来
+  embed_index.py / embed_search.py     多模态索引与检索（自然语言找素材 / 用照片找最像的镜头 / 找近重复）
 ```
 
 ---

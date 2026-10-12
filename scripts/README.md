@@ -43,8 +43,20 @@ DAYS     = os.environ.get("EDIT_DAYS", "").split(",")          # 覆盖的拍摄
 | `shake_rank2.py` | **相位相关抖动排序**：480×270 @30fps 逐帧估全局平移，分离高频抖动与有意运镜 | `mlib`、`numpy` | 无（纯算法） |
 | `unzstd.js` | ⭐ 解"增量追加写"的 `.zstd` 日志（**按魔数切多帧**，很多解压库只解第一帧） | Node（含 `zlib.zstdDecompressSync`） | 无（通用工具） |
 | `sess_recover.py` | 从会话 `.jsonl` 里抽出助手文本（配合 `unzstd.js`，把被 kill 的 fan-out 结论捞回来） | 无（`SESS_DIR` / `NODE_BIN` / `FINAL_KEYS` 环境变量） | 记录形状 `{type,data}` 与"最终结论字段名" |
+| `embed_index.py` | ⭐ **建多模态索引**：每条素材在时长上取 3 帧 embed 图片 + 用摘要 embed 文本；照片各 embed 一次。**只新增**两张表，不碰已有表；支持断点续跑 | `mlib`、`PIL`、一个 embedding 服务（`EMBED_BASE`） | `EMBED_BASE` / `EMBED_MODEL`；`mlib.py` 的库路径；照片目录；抽帧比例 `FRAME_FRACS` |
+| `embed_search.py` | ⭐ **检索**：`--text` 用自然语言找素材、`--photo` 用一张照片找最像的镜头、`--similar` 找重复镜头；`--pool max` 会报出命中在第几秒 | 同上 | 同上 |
 
-⭐ = 这套流程里最值钱的四个验收工具。
+⭐ = 这套流程里最值钱的几个验收/检索工具。
+
+### 关于 `embed_*` 的两个前提
+
+1. **需要一个 embedding 服务**（OpenAI 兼容的 `/v1/embeddings`）。默认连 `http://127.0.0.1:8087`，
+   服务在别的机器上用 `EMBED_BASE=http://<host>:8087` 覆盖。**图片走 content 数组，文本必须带任务前缀**
+   （检索侧 `task: search result | query: …`，文档侧 `title: … | text: …`），不带前缀排序会明显变差。
+2. **它是"检索"，不是"审美判断"**。实测四个查询里，期望素材**全部只排到第 2**，被"同日同场景的邻居"反超——
+   模型分得清"这是哪儿"，分不清"这条和那条差在哪"。所以它可以用来**缩小候选集**，
+   不能替代抽帧看图那一步（见 `SKILL.md` §3）。索引规模与验收数字见
+   `references/data-geo-schema.md` 的《附：embedding 实测》。
 
 ---
 
@@ -66,6 +78,14 @@ python scripts/shake_rank2.py <素材号> <素材号> ...    # 抖动排序
 # 中断恢复
 node scripts/unzstd.js <in.zstd> <out.jsonl>
 python scripts/sess_recover.py
+
+# 多模态索引与检索（需要 embedding 服务）
+python scripts/embed_index.py                 # 全量建索引（断点续跑，已建过的跳过）
+python scripts/embed_index.py --only-photo    # 只补照片
+python scripts/embed_search.py --text "雾气弥漫的山谷"      # 自然语言找素材
+python scripts/embed_search.py --photo photos/trip/<照片>.jpg  # 用照片找最像的镜头
+python scripts/embed_search.py --similar <素材号>           # 找重复/近重复镜头（成片去重）
+python scripts/embed_search.py --text "..." --pool max      # 报出命中在第几秒
 ```
 
 ---
