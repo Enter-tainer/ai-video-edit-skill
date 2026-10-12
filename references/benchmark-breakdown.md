@@ -37,11 +37,11 @@
 
 | 来源 | 本地存档 | 原链接 | 里面有什么 |
 |---|---|---|---|
-| 两条路线主报告 | [`sources/tJTb.md`](../sources/tJTb.md)（渲染版 [`sources/a-tJTb.html`](../sources/a-tJTb.html)） | <https://shz.al/tJTb> | 8 条的元数据总表（时长 / 播放 / 镜头数 / 均长 / 中位 / 开场 30s 镜数 / `<1s`、`>5s` 占比 / 语速）＋ 标题公式统计 ＋ 可直接套的骨架 |
+| 两条路线主报告 | [`sources/tJTb.md`](../sources/tJTb.md)（渲染版 [`sources/tJTb.md`](../sources/tJTb.md)） | <https://shz.al/tJTb> | 8 条的元数据总表（时长 / 播放 / 镜头数 / 均长 / 中位 / 开场 30s 镜数 / `<1s`、`>5s` 占比 / 语速）＋ 标题公式统计 ＋ 可直接套的骨架 |
 | 16 份逐片拆解合订本 | [`sources/BXpr.md`](../sources/BXpr.md) | <https://shz.al/BXpr> | 每条片子一份「脚本与文案拆解」＋ 一份「分镜与剪辑拆解」，含逐镜时间码、原话引用、语速分档 |
 | 逐镜分镜表模板 | [`sources/4pf4.md`](../sources/4pf4.md) | <https://shz.al/4pf4> | CSV 表头：段落 / 时间码 / 镜头 / 镜头类型 / 画面内容 / 机位焦段 / 计划时长 / 同期声旁白 / 字幕花字 |
 | BGM 拆解报告 | [`sources/bgm-report.md`](../sources/bgm-report.md) | <https://shz.al/~bgm-report> | 12 条片的曲库 / 曲名 / 铺法 / 收尾规律 ＋ 语音占比与最长无旁白窗 |
-| 对标 BGM 谱面级分析 | [`sources/bgm-scores.html`](../sources/bgm-scores.html) | <https://shz.al/a/~bgm-scores> | 21 个 BGM 片段扒谱（调性 / BPM / 和弦 / 密度 / 音域 / 峰值位置）——[`music-and-score.md`](music-and-score.md) §1.3 三档配方的出处 |
+| 对标 BGM 谱面级分析 | [`sources/bgm-scores.md`](../sources/bgm-scores.md) | <https://shz.al/a/~bgm-scores> | 21 个 BGM 片段扒谱（调性 / BPM / 和弦 / 密度 / 音域 / 峰值位置）——[`music-and-score.md`](music-and-score.md) §1.3 三档配方的出处 |
 | 影视飓风长片拆解 | [`sources/ysjf-longform.md`](../sources/ysjf-longform.md) | <https://shz.al/~ysjf-longform> | 另一条对照路线（**更快一倍**：均值 3–5s/镜）。**本文件的判据不用它**，只在 §六 提到 |
 | 原始工具链 | 未随本仓库分发 | — | `pipeline_video.py` / `post_analyze.py` / `extra_sheets.py`（在拆解方的 `bili-vlog-research` 项目里） |
 
@@ -296,7 +296,7 @@ Links·最孤独的房子 **110.4** / 库拉岗日 **198.6** / 第一座雪山 *
 **这一节不在这里展开**：算法、三档槽位配方、生成与回读验收的完整做法见
 [`music-and-score.md`](music-and-score.md) §1。三档配方是从 **12 条对标片的 21 个 BGM 片段**
 扒谱得出的（名单与逐段参数见 [`music-and-score.md`](music-and-score.md) §1.0），
-来源报告 [`sources/bgm-scores.html`](../sources/bgm-scores.html) / <https://shz.al/a/~bgm-scores>。
+来源报告 [`sources/bgm-scores.md`](../sources/bgm-scores.md) / <https://shz.al/a/~bgm-scores>。
 这里只记两条**属于"拆解"本身的**口径：
 
 1. **必须按使用窗口重算**（同上 §2.1），不是按整首曲子；

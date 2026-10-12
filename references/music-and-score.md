@@ -52,7 +52,7 @@
 | 《带着100万，我们揭开了赌场的秘密…》53:49 | 影视飓风 | ⚠️ 同上 | 2:12、6:18、8:36、11:06、28:18（爵士/香颂/古典） |
 | 《去了一趟挪威》28:24 | 影视飓风 | ⚠️ 同上 | 13:06、**28:00–28:12 片尾** |
 
-**逐段谱面结果**（**本地存档**：[`sources/bgm-scores.html`](../sources/bgm-scores.html)，
+**逐段谱面结果**（**本地存档**：[`sources/bgm-scores.md`](../sources/bgm-scores.md)，
 原链接 <https://shz.al/a/~bgm-scores>；三家的曲库与识别方法见
 [`sources/bgm-report.md`](../sources/bgm-report.md) / <https://shz.al/~bgm-report>）
 ——**§1.3 的三档配方就是从这张表归并出来的**：
@@ -138,7 +138,7 @@ pos = (i* − t0) / (t1 − t0)                        # 0=窗口开头，1=窗�
 
 ### 1.3 三档槽位配方（对标得出的形态）
 
-归并自 §1.0 那张 21 段表；**来源报告**：[`sources/bgm-scores.html`](../sources/bgm-scores.html)
+归并自 §1.0 那张 21 段表；**来源报告**：[`sources/bgm-scores.md`](../sources/bgm-scores.md)
 （<https://shz.al/a/~bgm-scores>）§二.3「槽位–参数对照」。
 
 | 槽位 | 调性 | BPM | 和弦 | 目标密度 | 其它 |
