@@ -8,7 +8,8 @@
 > 相关性说明：槽位表与配方表在 [`selection-and-structure.md`](selection-and-structure.md) §2.6/§2.7
 > 已有简表；本文件是它的**专题展开**——重点补三块：
 > ① 对标拆解的具体做法；② AI 生成配乐的可控手段（ABC 而非提示词）；③ 纯器乐与接缝的验收。
-> 本 skill 的 `scripts/` 目前**没有**配乐工具；下面给出算法与 JSON 契约，照 §3.3 自己写一个客户端即可。
+> 本 skill 的 `scripts/` 里有一个**纯 HTTP 客户端** [`scripts/yue2_client.py`](../scripts/yue2_client.py)
+> （端到端照敲步骤见 §3.6）；**配乐生成 / 铺床那部分脚本不在仓库里**，下面给出算法与接口契约。
 
 ---
 
@@ -307,6 +308,241 @@ no drums, wide and spacious, leaves room for the picture, <NO_VOCAL>
 **为什么**：模型自选长度可能远超谱面——实测一份名义 23 秒的谱渲染出了 **192 秒**的音频。
 **怎么验证**：对每个槽位记录 `曲长 − 段落长` 的余量表（§2.1）；
 余量为负或大得离谱（>2×）都说明长度没控住。
+
+### 3.6 端到端跑一遍（runbook）
+
+> §3.3 是契约、§3.1–§3.5 是判据，这一节是**照敲**：每一步**一条命令一行**，按
+> "输入 / 期望输出 / 怎么判断成功"写。客户端就是本仓库自带的
+> [`scripts/yue2_client.py`](../scripts/yue2_client.py)：只依赖 Python 3 标准库，
+> **服务地址走环境变量**（`YUE2_BASE`，默认回环）、鉴权走 `YUE2_API_KEY`、超时 `YUE2_TIMEOUT`（默认 600s）。
+> 下面的耗时/数值都是那次实测的量级，**换服务、换显卡要重新量**。
+
+**第 0 步 · 地址与 key 进环境变量**
+
+```bash
+export YUE2_BASE=http://127.0.0.1:8100 YUE2_API_KEY=<key> ASR_URL=http://127.0.0.1:8083
+```
+
+- **输入**：你部署的作曲/扒谱服务地址、API key、一个 OpenAI 兼容的 ASR 地址。
+- **期望输出**：没有输出（`export` 成功即可）。
+- **怎么判断成功**：下一步能连上。别把 key 写进脚本文件，写进环境或配置文件。
+
+**第 1 步 · 健康检查（兼冷启动探测）**
+
+```bash
+python scripts/yue2_client.py health
+```
+
+- **输入**：无（`/health` 免 key）。
+- **期望输出**：`{"status":"ok", …, "pipe_loaded":false, "queue":0, "transcriber":"http://…:8101", "endpoints":[…]}`。
+- **怎么判断成功**：`status=ok`。**首次调用要等 socket 激活（实测约 9s）**，所以客户端超时设 ≥600s；
+  `pipe_loaded=false` 表示权重还没进显存——服务是**惰性加载**，空闲时显存为 0，第一次真干活才载入。
+
+**第 2 步 · 先读服务自述文档**
+
+```bash
+python scripts/yue2_client.py doc
+```
+
+- **输入**：无（免 key；`GET /?lang=en` 是英文版，另有 `/openapi.json`、`/docs`）。
+- **期望输出**：markdown 文档——快速开始、**生命周期与显存**、每个接口的字段表、故障排查表、已知限制。
+- **怎么判断成功**：能看到 `endpoints` 与字段表。这是排错的地基：**任何接口报错都会带一个指向 `GET /`
+  的 `usage` 字段**，`401`/`422` 的 `detail` 里也会写 `see GET / for usage / example payloads`——
+  所以"**4xx 要把服务端返回的 `detail` 一起抛出来**"，别只抛状态码。
+  `python scripts/yue2_client.py examples` 还能拿到**可以直接回发**的示例 body。
+
+**第 3 步 · 让它先写一版谱（只写谱，不出音频、不占显存）**
+
+```bash
+python scripts/yue2_client.py plans --style style.txt --cot full
+```
+
+- **输入**：`style.txt` 一行风格串。**保留"音色/氛围"，把"调性/和弦"删掉**
+  （反正控不住，写了反而骗自己），末尾拼上这段常量（**原文，一字不改**）：
+
+  ```python
+  NO_VOCAL = ("instrumental underscore only, absolutely no vocals, no choir, no voice, "
+              "no humming, no spoken word, no vocal-like timbre, no vibrato pad, "
+              "pure strings and piano")
+  ```
+
+  把它**固化成代码里的常量**、每次生成自动拼上（**不要手工拼**；为什么必须说这么死见 §4.2）。
+- **期望输出**：job JSON（`status=done`、`bpm`、`note_counts`、`nominal_seconds`、`truncated.abc`）
+  ＋ 落盘的 `score.abc`。
+- **怎么判断成功**：拿到 ABC 文本就行。**但这一版只当草稿**：实测把要求写死反而更不听话（§3.1）。
+  定稿走**手写 ABC**，五段槽位的输入长这样（段名按你的片子改）：
+
+  | 槽位 | `K:` | `Q:1/4=` | 和弦 | 目标密度 | 形状 |
+  |---|---|---|---|---|---|
+  | 开场·标题 | `Gm` | 62 | i–VI–VII | 20–50 音/分 | 前段长音 → 后段四×4 |
+  | 铺垫章 | `Bb` | 60 | I–vi–IV | **16–35** | 几乎整小节一个长音 |
+  | 展开章 | `Eb` | 88 | I–V–vi–IV | 34–100 | 由疏到密逐段加密 |
+  | 低谷章 | `Cm` | 58 | i–VI | ≈15 | 全小节一个 32 长音 |
+  | 高潮+片尾 | `Eb` | 84 | I–V–IV–I | 49–61 | 末两小节收在主和弦长音 |
+
+  §3.4 的两个语法坑在这一步就会咬人：**每个声部每行 ≤4 小节**、**两个声部必须交替成组**。
+
+**第 4 步 · 渲染前先自检**
+
+```bash
+python scripts/yue2_client.py inspect --abc slot1.abc
+```
+
+- **输入**：手写（或第 3 步给的）ABC。
+- **期望输出**：`report` 里 `voices[*].sounding_notes`、`nominal_duration_seconds`、`bpm`、`status`。
+- **怎么判断成功**：`total_notes / nominal_seconds * 60` 落在该槽位的目标区间（§3.2 的算式）。
+  实测五段落到 **33.8 / 19.3 / 61.2 / 14.2 / 52.7 音/分**，全部达标。
+  **这一步不占显存**——密度不对就回去改谱，**不要拿渲染去试错**。
+
+**第 5 步 · 渲染前先卸载扒谱模型（最容易漏的一条）**
+
+```bash
+python scripts/yue2_client.py unload --transcriber
+```
+
+- **输入**：无。
+- **期望输出**：`{"status":"…"}` 之类的卸载回执。
+- **怎么判断成功**：**不报错就行**。为什么必须做：扒谱跑完会把模型驻留 **约 3.4–3.5GB** 显存，
+  和作曲模型抢同一张 16GB 卡，渲染直接
+  `OutOfMemoryError: CUDA out of memory. Tried to allocate 722.00 MiB …`。
+  顺序永远是"**先扒谱 → 卸 → 再渲染**"。
+
+**第 6 步 · 提交渲染（异步，别加 `--sync`）**
+
+```bash
+python scripts/yue2_client.py songs --style style.txt --abc slot1.abc --seconds 90
+```
+
+- **输入**：风格串（末尾带 `NO_VOCAL`）、第 4 步自检过的 ABC、`--seconds`（本段需要 + 交叉淡化余量）。
+- **期望输出**：`202` + job 对象，或（客户端默认行为）轮询到 `status=done` / `done_truncated`。
+- **怎么判断成功**：状态是 `done` 或 `done_truncated`——**`done_truncated` = 撞了 `seconds`/`max_tokens`
+  上限，不是故障**。三条要点：
+  1. **不要用 `--sync`（`?wait=1`）跑长任务**：挂着的长连接会被中间的反向代理掐掉，报
+     `http.client.RemoteDisconnected`。上面这条命令默认就是"异步提交 + 轮询"。
+  2. **`seconds` 只是上限，谱面长度才是主控**（见 §3.5）：实测 `25` 语义 token ≈ 1 秒
+     （`seconds=45 → 45.00s`、`max_tokens=1500 → 60.00s`），撞上限会**切在乐句中间**。
+     经验做法：**想要 60 秒就写 `seconds: 90`**，让它自然收尾，再在时间线上裁。
+  3. 期望耗时：32–110 秒的曲子，`elapsed_s` 实测 **19.8 / 32.4 / 50.3 / 43.5 / 63.2s**；
+     140–170 秒的曲子 **85.5–120.6s**。**首次渲染还要多等权重惰性加载的 30–40s**。
+
+**第 7 步 · 等它跑完（3–6s 查一次，404 要重试）**
+
+```bash
+python scripts/yue2_client.py jobs <job_id> --interval 6
+```
+
+- **输入**：第 6 步的 `job_id`。**轮询用 `/v1/jobs/{id}`，不是 `/v1/songs/{id}`**。
+- **期望输出**：`{"status":"queued|running|done|done_truncated|failed", "audio_seconds":…, "elapsed_s":…}`。
+- **怎么判断成功**：`done` / `done_truncated`。**刚提交时 job 可能还没进注册表 → 404，
+  要重试而不是报错**（客户端重试 20 次再放弃）。服务是**单卡单 worker、串行**执行的，长曲会排队
+  （看 `/health` 的 `queue`）；多段一起提交时 `elapsed_s` 含排队时间。
+  另外：**别把渲染放进受限的后台 cgroup**（内存小、且约 3 分钟会被 SIGTERM），用前台跑、超时 ≥600s。
+
+**第 8 步 · 下载成品**
+
+```bash
+python scripts/yue2_client.py get <job_id> native/audio.flac --out work/slot1.flac
+```
+
+- **输入**：`job_id` + 产物名。先 `python scripts/yue2_client.py files <job_id>` 可以列出全部产物
+  （`native/audio.flac`、`audio.mp3`、`score.abc`、`request.json`、`result.json`…）。
+- **期望输出**：`-> work/slot1.flac`。
+- **怎么判断成功**：文件在，且 `ffprobe` 读出的时长 ≥ 本段需要 + 交叉淡化余量（§2.1 的余量表全为正）。
+  顺手比一下 `score.abc`（渲染实际用的谱）和第 4 步的 `slot1.abc` 是否一致。
+  小坑：**只有 `.flac` 没有 `.mp3`，通常是服务端找不到 `ffmpeg`**。
+
+**第 9 步 · 转一份 128k mp3 给验证用**
+
+```bash
+ffmpeg -v error -y -i work/slot1.flac -b:a 128k work/slot1.mp3
+```
+
+- **输入**：第 8 步的 flac。
+- **期望输出**：一个几 MB 的 mp3。
+- **怎么判断成功**：能解出时长。**ASR 与扒谱都上传这一份**，别传母版大小。
+  上传音频的表单字段名**必须是 `file`**，否则服务回 `multipart body needs a 'file' field`。
+
+**第 10 步 · 纯器乐证据 A：ASR 转写（要空）**
+
+```bash
+curl -s -F file=@work/slot1.mp3 -F model=whisper-1 "$ASR_URL/v1/audio/transcriptions"
+```
+
+- **输入**：`ASR_URL` 指向一个 OpenAI 兼容的转写服务。
+- **期望输出**：`{"text":""}`（或只有碎词）。
+- **怎么判断成功**：**转不出连贯句子**。实测出问题的那一段，ASR 从纯器乐里**转出了一整句英文**——
+  这是"里面混了语音类内容"的第一条独立证据；**只是碎词多半是幻觉，不要判死**。
+
+**第 11 步 · 纯器乐证据 B：3–6Hz 调制（音节速率，要个位数）**
+
+```bash
+python -c "import numpy as np,subprocess,sys;SR=16000;p=sys.argv[1];x=np.frombuffer(subprocess.run(['ffmpeg','-v','error','-i',p,'-ac','1','-ar','16000','-f','f32le','-'],capture_output=True).stdout,dtype='<f4').astype(float)[:60*SR];f=np.fft.rfftfreq(len(x),1/SR);Y=np.fft.rfft(x);Y[(f<300)|(f>3400)]=0;y=np.fft.irfft(Y,len(x));w,hop=int(.025*SR),int(.010*SR);e=np.array([np.sqrt((y[i:i+w]**2).mean()+1e-12) for i in range(0,len(y)-w,hop)]);e-=e.mean();E=np.abs(np.fft.rfft(e*np.hanning(len(e))))**2;fe=np.fft.rfftfreq(len(e),hop/SR);print(round(float(E[(fe>=3)&(fe<=6)].sum()/(E.sum()+1e-20)*100),2))" work/slot1.mp3
+```
+
+- **输入**：第 9 步的 mp3（算法逐行解释见 §4.1）。
+- **期望输出**：一个百分数。实测各段 **0.57%–5.91%**，修前那个离群段是 **16.19%**。
+- **怎么判断成功**：**两条证据同时命中才定案**。用"**离群 + 第二条独立证据**"而不是绝对阈值：
+  实测有一条**不是**人声的对照曲也到了 **9.85%** —— 没有干净阈值，别只盯数字。
+
+**第 12 步 · 把成品丢回扒谱（回读对标，顺带拿 lab）**
+
+```bash
+python scripts/yue2_client.py transcribe --audio work/slot1.mp3 --task full --interval 6
+```
+
+- **输入**：成品 mp3（`task=full` = 调性 + 和弦 + 旋律 + 曲式；`--max-seconds 90` 可只转前 90 秒）。
+- **期望输出**：job JSON，含 `status`、`melody_notes`、`vocal_notes`、`abc_measures`、`files` 表。
+- **怎么判断成功**：`done`；**`vocal_notes` 应为 0 或极小**（第三条旁证）。
+  注意：**这一步会把扒谱模型重新拉进显存**，所以下一个槽位渲染前要再回第 5 步卸一次。
+
+**第 13 步 · 取回 lab，算密度 / 长音比例**
+
+```bash
+python scripts/yue2_client.py get <transcribe_job_id> melody_instrumental.lab --via transcribe --out work/mel.lab
+```
+
+- **输入**：第 12 步的 `job_id`。**扒谱产物走 `/v1/transcribe/{id}/file/{name}`，不在 `/v1/jobs` 下**，
+  所以必须带 `--via transcribe`（不带会 404）。要调性/和弦就把 `key.lab`、`chord.lab` 各取一次。
+- **期望输出**：`key.lab` 末字段是调性（如 `G:minor`）；`chord.lab` 第 1 行常是表头，取前 8 行第 3 列
+  即和弦序列；`melody_instrumental.lab` 每行是"起 止"。
+- **怎么判断成功**：`音符数 / 全长秒 × 60` 落回槽位目标（§1.2 口径）；**长音比例**（≥1.0s 的音符占比）
+  垫底类应该高；峰值位置要按**成片里的使用窗口**重算（§1.1），不是按整首曲子。实测五段回读的
+  调性与密度 **33.8 / 19.3 / 61.2 / 14.2 / 52.7 音/分** 全部落位。
+
+**第 14 步 · 不合格时的修法（三类，都是"改输入重渲"，不是调音量）**
+
+```bash
+python scripts/yue2_client.py songs --style style.txt --abc slot1_fix.abc --seconds 90 --seed 4242
+```
+
+- **密度 / 调性不对** → 改 **ABC**（改 `K:`、改每小节的音符排布）。别指望 `style`：实测把
+  "sparse / 每两秒一个音"写满，密度也只从 124 压到 **47.6 音/分**，仍高于垫底的 16–35。
+- **有人声垫子** → 把 §4.2 那段 `NO_VOCAL` 原文**一字不改**拼到风格串末尾重渲
+  （**同一个 seed 就够**：实测 16.19% → 0.93%、ASR 变空）；还不行再**换 seed 逐个试**。
+- **长度不对** → 加 `seconds`（它只是上限，见 §3.5）或改谱面小节数。
+- 每次重渲前都要回第 5 步 `unload --transcriber`（第 12 步刚把扒谱模型拉回来过）。
+
+**第 15 步 · 收尾：把显存放掉**
+
+```bash
+python scripts/yue2_client.py unload --transcriber
+```
+
+- **输入**：无。
+- **期望输出**：卸载回执。
+- **怎么判断成功**：再跑一次 `health`，`pipe_loaded` 回到 `false`（空闲时两个模型的显存都应该是 0）。
+  不手动卸也行——服务是 **socket 激活 + 空闲自动退出**（实测空闲 300s 自杀，下次请求自动拉起），
+  但**下一次渲染前**先卸一次更稳。
+
+> **这个 runbook 里最容易做错的五件事**
+>
+> | # | 做错的写法 | 后果 | 正确写法 |
+> |---|---|---|---|
+> | 1 | `?wait=1` 跑渲染 | 长连接被代理掐掉 → `RemoteDisconnected` | 异步提交 + 轮询 `/v1/jobs/{id}`（3–6s，404 重试） |
+> | 2 | 扒谱完直接渲染 | 扒谱驻留 3.4–3.5GB 抢卡 → `OutOfMemoryError` | 渲染前 `POST /v1/admin/unload?transcriber=true` |
+> | 3 | 只抛状态码 | 丢掉 `detail` 里的 usage / 示例 body，参数问题查不动 | 把服务端 body 一起抛 |
+> | 4 | 靠 `seconds` 定长度 | 谱面写多长就渲多长（名义 23s 的谱出过 192s 音频） | 谱面控长度、`seconds` 只当上限（§3.5） |
+> | 5 | 按"点一下就有"估时间 | 冷启动约 9s、首次生成权重加载 30–40s、空闲 300s 自停 | 客户端超时 ≥600s，长任务前台跑 |
 
 ---
 

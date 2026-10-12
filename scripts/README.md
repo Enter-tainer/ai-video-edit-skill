@@ -45,6 +45,7 @@ DAYS     = os.environ.get("EDIT_DAYS", "").split(",")          # 覆盖的拍摄
 | `sess_recover.py` | 从会话 `.jsonl` 里抽出助手文本（配合 `unzstd.js`，把被 kill 的 fan-out 结论捞回来） | 无（`SESS_DIR` / `NODE_BIN` / `FINAL_KEYS` 环境变量） | 记录形状 `{type,data}` 与"最终结论字段名" |
 | `embed_index.py` | ⭐ **建多模态索引**：每条素材在时长上取 3 帧 embed 图片 + 用摘要 embed 文本；照片各 embed 一次。**只新增**两张表，不碰已有表；支持断点续跑 | `mlib`、`PIL`、一个 embedding 服务（`EMBED_BASE`） | `EMBED_BASE` / `EMBED_MODEL`；`mlib.py` 的库路径；照片目录；抽帧比例 `FRAME_FRACS` |
 | `embed_search.py` | ⭐ **检索**：`--text` 用自然语言找素材、`--photo` 用一张照片找最像的镜头、`--similar` 找重复镜头；`--pool max` 会报出命中在第几秒 | 同上 | 同上 |
+| `yue2_client.py` | **配乐服务的纯 HTTP 客户端**（写谱 `plans` / 渲染 `songs` / 扒谱 `transcribe` / 谱面工具 `inspect`·`strip-chords`·`compare` / `jobs`·`files`·`get` / `unload`）：默认**异步提交 + 轮询**，4xx/422 会把服务端 `detail` 一起抛；端到端步骤见 `references/music-and-score.md` §3.6 | 无（Python 3 标准库，不用 `mlib`）；⚠️ 它连的是**外部服务**，不是本地文件 | **服务地址**用 `YUE2_BASE` 环境变量（默认回环 `http://127.0.0.1:8100`）；鉴权 `YUE2_API_KEY`；超时 `YUE2_TIMEOUT`（默认 600s）。**模型 / 端点名**（`/v1/plans`、`/v1/songs`、`/v1/transcribe`、`/v1/tools/abc/*`、`/v1/jobs/{id}`、`/v1/admin/unload`）是服务侧契约名，换一套服务先跑 `python scripts/yue2_client.py doc` 看它的 `endpoints` 再改名；扒谱产物要加 `--via transcribe`（走 `/v1/transcribe/{id}/file/{name}`） |
 
 ⭐ = 这套流程里最值钱的几个验收/检索工具。
 
