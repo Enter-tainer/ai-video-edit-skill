@@ -24,6 +24,8 @@
 | 要写校验脚本 | [`references/acceptance-metrics.md`](references/acceptance-metrics.md)（算法 + 阈值怎么定 + 复算命令） |
 | ffmpeg 报奇怪的错 | [`references/ffmpeg-pitfalls.md`](references/ffmpeg-pitfalls.md) |
 | 要挑素材 / 定节奏 | [`references/selection-and-structure.md`](references/selection-and-structure.md) |
+| 配乐 / 扒谱 / 生成 | [`references/music-and-score.md`](references/music-and-score.md)（对标拆解→配方→ABC→回读验收） |
+| 设计素材库 / 用 GPS | [`references/data-geo-schema.md`](references/data-geo-schema.md)（schema、轨迹口径、位置校验） |
 | 要多人/多 agent 协作 | [`SKILL.md`](SKILL.md) §8 + [`references/agent-orchestration.md`](references/agent-orchestration.md) |
 | 想用现成脚本 | [`scripts/README.md`](scripts/README.md)（先改 `mlib.py` 的配置） |
 
@@ -50,6 +52,8 @@ references/
   acceptance-metrics.md                量化指标：怎么算、阈值怎么定、怎么复算
   selection-and-structure.md           选片判据、结构详略预算、一次完整迭代的形态
   agent-orchestration.md               多 agent 协作：什么时候派、怎么分工、怎么复核、中断恢复
+  music-and-score.md                   配乐：对标拆解定配方、手写 ABC 生成、纯器乐双证据、铺床余量
+  data-geo-schema.md                   素材库 schema、GPS 轨迹与口径、位置校验、embedding（未采用）
   provenance.md                        结论的来源类型与核实状态（哪些没核实）
 scripts/
   README.md                            关键验收工具清单 + 换项目要改什么
