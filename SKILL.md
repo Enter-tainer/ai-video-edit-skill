@@ -445,7 +445,7 @@ transform: vidstabtransform=input=<相对名>:smoothing=30:optzoom=2:interpol=1
 同时**分段的输出路径必须是绝对路径**（输出不走滤镜参数解析）。
 
 **为什么**：盘符的冒号会被 ffmpeg 的滤镜参数解析器当成**选项分隔符**，
-`result=C:\...\t.trf` 会被拆断。
+`result=<相对文件名>.trf` 会被拆断。
 
 **怎么验证**：故意传一次绝对路径看报错；或检查生成的 trf 是否被截断。
 

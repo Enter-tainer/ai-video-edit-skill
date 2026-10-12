@@ -530,7 +530,8 @@ python scripts/yue2_client.py unload --transcriber
 
 - **输入**：无。
 - **期望输出**：卸载回执。
-- **怎么判断成功**：再跑一次 `health`，`pipe_loaded` 回到 `false`（空闲时两个模型的显存都应该是 0）。
+- **怎么判断成功**：再跑一次 `health`，作曲侧 `pipe_loaded` 回到 `false`
+  （扒谱侧的对应字段是 `model_loaded`）；空闲时两个模型的显存都应该是 0。
   不手动卸也行——服务是 **socket 激活 + 空闲自动退出**（实测空闲 300s 自杀，下次请求自动拉起），
   但**下一次渲染前**先卸一次更稳。
 
