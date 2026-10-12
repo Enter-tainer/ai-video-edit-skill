@@ -65,6 +65,7 @@ scripts/
   mlib.py                              公共库（路径、ffprobe、SQLite 连接）
   unzstd.js / sess_recover.py          把中断的并行任务的结论从会话记录里捞回来
   embed_index.py / embed_search.py     多模态索引与检索（自然语言找素材 / 用照片找最像的镜头 / 找近重复）
+sources/                               对标 up 主的原始拆解报告（第三方公开材料，含片名/UID/链接）
 ```
 
 ---

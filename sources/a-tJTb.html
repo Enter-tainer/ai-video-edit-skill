@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang='en' class='light'>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+  <title>两条对标路线拆解 + 可执行拍摄剪辑方案</title>
+  <meta name='description' content='研究对象：B 站 呆呆不吃喵（UID 3493258189605288，20 万粉）与 Linksphotograph（UID 3816626，485 万粉）
+方法：各取 4 条代表作（共 8 条 / 4.5 小时素材），720p 下载 → Qwen3-ASR 全片听译（带逐句时间码）
+→ ffmpeg 场景切换检测出逐镜头分镜表 → 每 5 秒抽帧拼成接触表（含烧录字幕）逐张看 → 16 份结构'>
+  <link rel='stylesheet' href='https://pages.github.com/assets/css/style.css'>
+  <link rel="stylesheet" href="/assets/highlight-client-AXp1fVRm.css">
+  <style>
+  body { margin: 0; }
+  .page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; box-sizing: border-box; }
+  .page > article { min-width: 0; }
+  @media (min-width: 1024px) { .page.has-toc { grid-template-columns: 240px minmax(0, 1fr); } }
+  .toc { font-size: 0.9em; line-height: 1.5; }
+  @media (min-width: 1024px) { .toc { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow-y: auto; } }
+  .toc ol { list-style: none; padding-left: 1em; margin: 0; }
+  .toc > ol { padding-left: 0; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 0.2rem 0 0.2rem 0.5rem; color: #57606a; text-decoration: none; border-left: 2px solid transparent; }
+  .toc a:hover { color: #0969da; }
+  .toc a.active { color: #0969da; border-left-color: #0969da; background: rgba(9, 105, 218, 0.06); }
+  .markdown-body :is(h1, h2, h3, h4, h5, h6) .header-anchor { opacity: 0; margin-left: -0.8em; padding-right: 0.2em; color: #57606a; text-decoration: none; font-weight: normal; }
+  .markdown-body :is(h1, h2, h3, h4, h5, h6):hover .header-anchor,
+  .markdown-body .header-anchor:focus { opacity: 1; }
+  /* Fenced code block layout. The line-number gutter is rendered server-side
+     and uses CSS counters, so it's visible immediately (no JS / no CLS) and
+     stays put once highlight.js swaps the code's children. */
+  .markdown-body .code-block { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 1em 0; border: 1px solid #d0d7de; border-radius: 6px; background: #f6f8fa; overflow: hidden; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 85%; line-height: 1.45; }
+  .markdown-body .code-block > pre { grid-column: 2; margin: 0; padding: 12px 16px; overflow-x: auto; background: transparent; font: inherit; border: 0; border-radius: 0; }
+  .markdown-body .code-block > pre > code { background: transparent; padding: 0; font: inherit; border-radius: 0; }
+  .markdown-body .code-block > .line-number-rows { grid-column: 1; padding: 12px 8px 12px 12px; border-right: 1px solid #d0d7de; color: #6e7681; user-select: none; counter-reset: linenumber; }
+  .line-number-rows > span::before { content: counter(linenumber); counter-increment: linenumber; display: block; text-align: right; min-width: 1.5em; }
+</style>
+  <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script type='module' src='/assets/markdown-C5cUTddV.js'></script>
+</head>
+<body>
+<div class='page has-toc'>
+<nav class="toc" aria-label="Table of contents"><ol><li><a href="#0-结论先行你应该抄哪一条">0. 结论先行：你应该抄哪一条</a></li><li><a href="#1-选题与标题">1. 选题与标题</a><ol><li><a href="#11-两个账号-117-条视频的标题统计全量元数据">1.1 两个账号 117 条视频的标题统计（全量元数据）</a></li><li><a href="#12-标题公式可直接套">1.2 标题公式（可直接套）</a></li></ol></li><li><a href="#2-脚本结构">2. 脚本结构</a><ol><li><a href="#21-呆呆派四条片子其实是同一个模子">2.1 呆呆派：四条片子其实是同一个模子</a></li><li><a href="#22-links-派多一层题眼和副本递进">2.2 Links 派：多一层“题眼”和“副本递进”</a></li><li><a href="#23-共通骨架拿来就能写">2.3 共通骨架（拿来就能写）</a></li></ol></li><li><a href="#3-分镜设计">3. 分镜设计</a><ol><li><a href="#31-客观参数对照自算">3.1 客观参数对照（自算）</a></li><li><a href="#32-呆呆派的五个可复制镜头序列">3.2 呆呆派的五个可复制镜头序列</a></li><li><a href="#33-links-派的四个可复制镜头序列">3.3 Links 派的四个可复制镜头序列</a></li><li><a href="#34-川西雪山专用拍法最贴合你的素材">3.4 川西/雪山专用拍法（最贴合你的素材）</a></li></ol></li><li><a href="#4-剪辑节奏给你片子的具体参数">4. 剪辑节奏：给你片子的具体参数</a></li><li><a href="#5-声音与包装">5. 声音与包装</a></li><li><a href="#6-给你的执行方案">6. 给你的执行方案</a><ol><li><a href="#61-开拍前脚本模板可直接填">6.1 开拍前：脚本模板（可直接填）</a></li><li><a href="#62-拍摄中必拍镜头清单每个阶段一条">6.2 拍摄中：必拍镜头清单（每个阶段一条）</a></li><li><a href="#63-剪辑-sop">6.3 剪辑 SOP</a></li><li><a href="#64-links-派三个便宜但显贵的动作一定要加">6.4 Links 派三个“便宜但显贵”的动作（一定要加）</a></li></ol></li><li><a href="#7-素材索引与复用">7. 素材索引与复用</a></li></ol></nav>
+<article class='px-3 markdown-body'>
+<h1 id="两条对标路线拆解--可执行拍摄剪辑方案"><a class="header-anchor" aria-label="Permalink to 两条对标路线拆解 + 可执行拍摄剪辑方案" href="#两条对标路线拆解--可执行拍摄剪辑方案">#</a>两条对标路线拆解 + 可执行拍摄剪辑方案</h1>
+<blockquote>
+<p>研究对象：B 站 <strong>呆呆不吃喵</strong>（UID 3493258189605288，20 万粉）与 <strong>Linksphotograph</strong>（UID 3816626，485 万粉）
+方法：各取 4 条代表作（共 8 条 / 4.5 小时素材），720p 下载 → Qwen3-ASR 全片听译（带逐句时间码）
+→ ffmpeg 场景切换检测出逐镜头分镜表 → 每 5 秒抽帧拼成接触表（含烧录字幕）逐张看 → 16 份结构化拆解报告
+<strong>本文件里的所有镜头数 / 镜长 / 语速数字都是工具链自算的，可直接复核。</strong></p>
+</blockquote>
+<hr>
+<h2 id="0-结论先行你应该抄哪一条"><a class="header-anchor" aria-label="Permalink to 0. 结论先行：你应该抄哪一条" href="#0-结论先行你应该抄哪一条">#</a>0. 结论先行：你应该抄哪一条</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>呆呆不吃喵派</th>
+<th>Linksphotograph 派</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>拍摄门槛</td>
+<td><strong>低</strong>：单人手持 + 自拍杆就能拍</td>
+<td><strong>高</strong>：无人机 + 稳定器 + 长焦 + 延时</td>
+</tr>
+<tr>
+<td>爆款依赖</td>
+<td>选题 + 标题 + 情绪（可复制）</td>
+<td>目的地稀缺性（不可复制）</td>
+</tr>
+<tr>
+<td>开场策略</td>
+<td>30 秒塞 9–13 个镜头，快切立印象</td>
+<td>30 秒只放 3–9 个镜头，长镜压场</td>
+</tr>
+<tr>
+<td>平均镜长</td>
+<td>7.5–10.2 秒（越新越短）</td>
+<td>5.6–7.3 秒</td>
+</tr>
+<tr>
+<td>语速</td>
+<td>123–150 字/分（稳）</td>
+<td>110–204 字/分（跨度大）</td>
+</tr>
+<tr>
+<td>情绪工具</td>
+<td>口播 + 自嘲 + 金句 + 花字</td>
+<td>撤旁白 + 长镜 + BGM + 极短感叹句</td>
+</tr>
+<tr>
+<td>核心承诺</td>
+<td>“我替你把这段路走完”（代入感）</td>
+<td>“你到不了的地方我拍给你看”（替代体验）</td>
+</tr>
+</tbody></table>
+<p><strong>建议走混合路线</strong>（这是本次拆解最实用的结论）：
+<strong>骨架、口播文案、剪辑节奏抄呆呆（能一个人执行）；画面质感和高潮段抄 Links（航拍 + 长焦 + 撤旁白）。</strong>
+理由：你的素材是川西高原徒步——目的地本身够格上 Links 式的镜头语言，
+但你没有人家的团队和长期素材库，硬套 Links 的结构（55 分钟、几幕剧、嘉宾）会剪不出来。
+呆呆那套「冷开场 → 立目标 → 线性行程 → 情绪高点 → 把意义还给观众」一个人一部手机就能落地，
+再叠加 Links 的三个“便宜但显贵”的动作即可质变（见 §6.4）。</p>
+<hr>
+<h2 id="1-选题与标题"><a class="header-anchor" aria-label="Permalink to 1. 选题与标题" href="#1-选题与标题">#</a>1. 选题与标题</h2>
+<h3 id="11-两个账号-117-条视频的标题统计全量元数据"><a class="header-anchor" aria-label="Permalink to 1.1 两个账号 117 条视频的标题统计（全量元数据）" href="#11-两个账号-117-条视频的标题统计全量元数据">#</a>1.1 两个账号 117 条视频的标题统计（全量元数据）</h3>
+<p>呆呆不吃喵（59 条，2024-03 → 2026-09，月更 ~2 条）</p>
+<ul>
+<li>时长中位 19.2 分钟（2.2–41.7），标题中位 36 字，<strong>57/59 条带「！」</strong></li>
+<li>高播放（前 25%）与低播放标题的用词差：
+「拿下」21% vs 0%、「人生（第一次）」21% vs 4%、「最」50% vs 22%、
+「km」43% vs 27%、「第一次」29% vs 16%、「带你」93% vs 76%</li>
+<li>主题高度集中在<strong>国内徒步登山 + 火车/城市漫游</strong></li>
+</ul>
+<p>Linksphotograph（58 条，2023-11 → 2026-09，月更 ~1.9 条）</p>
+<ul>
+<li>时长中位 27 分钟（2.4–71.4），标题中位 26 字，<strong>50/58 条含「我」</strong>，25 条带「｜Links」后缀</li>
+<li>高播放标题里「我」64%、「世界」36%</li>
+<li>主题集中在<strong>极地（北极/格陵兰/斯瓦尔巴/冰岛）+ 高原（库拉岗日/冈仁波齐/墨脱）+ 设备评测 + 名人联动</strong></li>
+</ul>
+<h3 id="12-标题公式可直接套"><a class="header-anchor" aria-label="Permalink to 1.2 标题公式（可直接套）" href="#12-标题公式可直接套">#</a>1.2 标题公式（可直接套）</h3>
+<ul>
+<li>呆呆派：<code>[情绪/成长惊叹句！] + [数字锚点：公里数或耗时] + [vup带你 + 目的地] + [悬念奇观]</code>
+例：「人生第一次看到雪山！辗转两天一夜暴走15km，vup带你徒步雨崩，看日照金山月照梅里！」</li>
+<li>Links 派：<code>[身份/唯一性稀缺词] + [悬念问号] + [数字锚点] + [第一人称] + [地域]</code>
+例：「我是第一个上岛的中国人？在世界上最孤独的房子里过一夜！」</li>
+</ul>
+<p>共同点（两条路线都不能省的四个要件）：</p>
+<ol>
+<li><strong>数字锚点</strong>——公里数、爬升、耗时、名次，观众要用它判断“值不值得看”</li>
+<li><strong>第一人称</strong>——「我」或「带你」，站在观众身边</li>
+<li><strong>一个未兑现的奇观或悬念</strong>——日照金山 / 世界尽头 / 一个问号</li>
+<li><strong>身份或“第一次”</strong>——人生第一次、第一个上岛的中国人，制造稀缺</li>
+</ol>
+<p>对川西片可直接用的三个标题骨架：</p>
+<ul>
+<li>「人生第一次看到雪山！XX 湖三连穿 20km，4600 米垭口上我哭了」</li>
+<li>「川西被低估的一条线：20km 走完三个海子，最后一个没人拍过」</li>
+<li>「4600 米的垭口上没有信号，只有我和雪山」</li>
+</ul>
+<hr>
+<h2 id="2-脚本结构"><a class="header-anchor" aria-label="Permalink to 2. 脚本结构" href="#2-脚本结构">#</a>2. 脚本结构</h2>
+<h3 id="21-呆呆派四条片子其实是同一个模子"><a class="header-anchor" aria-label="Permalink to 2.1 呆呆派：四条片子其实是同一个模子" href="#21-呆呆派四条片子其实是同一个模子">#</a>2.1 呆呆派：四条片子其实是同一个模子</h3>
+<ol>
+<li><strong>冷开场 0:00–0:30（全片唯一/少数无旁白段）</strong>：纯画面蒙太奇 3–5 个最贵空镜快切，
+或打卡牌/悬念花字特写；不解释、不露脸、先给“值得”的第一印象。
+（泰山：挑山工特写→主峰长焦→车内→广场；峨眉山：打卡牌「第 8742 人」特写 + 云海航拍）</li>
+<li><strong>钩子接力 + 立目标 0:30–1:30</strong>：报任务量级（公里/爬升/天数/名次）+ 时间预算 + 一句不祥预感。</li>
+<li><strong>线性行程（60–80%）</strong>：按天或按地形切 3–6 段，每段内部是「立 flag → 受挫自嘲 → 再出发」的小循环。</li>
+<li><strong>情绪高点</strong>：先慢下来让情绪落地，再用快切蒙太奇推到顶。</li>
+<li><strong>收尾（3–8%）</strong>：把意义/祝福还给观众 + 留一个下期钩子。</li>
+</ol>
+<h3 id="22-links-派多一层题眼和副本递进"><a class="header-anchor" aria-label="Permalink to 2.2 Links 派：多一层“题眼”和“副本递进”" href="#22-links-派多一层题眼和副本递进">#</a>2.2 Links 派：多一层“题眼”和“副本递进”</h3>
+<ol>
+<li><strong>钩子 0:00–1:00</strong>（三种已验证的类型）<ul>
+<li>指认+反转：「在我身后的，就是世界上最孤独的房子」→ 铺稀缺性 → 抛两个猎奇猜测 → “真相完全不同”</li>
+<li>心愿问答：「你有什么想完成的心愿吗？」→“我想攀登人生第一座雪山”→ 先放“达成”的结果画面（倒叙）</li>
+<li>倒叙+立问：「我现在来到了世界的中心」→ 抬规格 → 抛出全片主问题（“转山的意义是什么？”）</li>
+</ul>
+</li>
+<li><strong>线性行程 + 副本递进（60–70%）</strong>：把行程拆成 2–3 个递进的小挑战，
+每完成一个给一次迷你高潮——<strong>这是 55 分钟超长片能看下去的关键</strong></li>
+<li><strong>中段低谷（30–40% 位置）</strong>：计划崩塌（船要没了 / 天气 buff 失效 / 被旅馆拒收），
+谷底镜长拉到最长（雪山片 31–34 分钟平均 48.9 秒/镜）</li>
+<li><strong>高潮</strong>：数字坐标 → 难度铺垫 → 抒情垫场 → 动员句 → <strong>主角独走最后一段做仪式感</strong> → 撤旁白静默 2–3 分钟</li>
+<li><strong>升华 + 反高潮收尾（50 秒左右）</strong>：回收设问 → 排比否定+排比肯定 → 借他人之口落锤 → 金句收束，
+然后用一个狼狈的小细节（脚麻）反高潮，不做总结陈词</li>
+</ol>
+<h3 id="23-共通骨架拿来就能写"><a class="header-anchor" aria-label="Permalink to 2.3 共通骨架（拿来就能写）" href="#23-共通骨架拿来就能写">#</a>2.3 共通骨架（拿来就能写）</h3>
+<div class="code-block"><span class="line-number-rows" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span><pre><code>0:00–0:30  冷开场：3–5 个最贵空镜快切 / 打卡牌特写 / 悬念句，不解释
+0:30–1:30  立目标：报数字（公里/爬升/天数）+ 时间预算 + 一句不祥预感
+1:30–X     行程段 1：爬升最难段，脚部特写 + 自嘲
+X          节点 1：路牌特写 + 报时间/名次 + 自拍口播（第一个小高潮）
+……         行程段 2–3：新地形 + 一次意外/低谷
+倒数 20%   情绪高点：登顶/垭口/日照金山——先慢后爆，撤旁白
+最后 3–8%  收尾：把意义还给观众 + 下期预告 + 求赞
+</code></pre></div>
+<hr>
+<h2 id="3-分镜设计"><a class="header-anchor" aria-label="Permalink to 3. 分镜设计" href="#3-分镜设计">#</a>3. 分镜设计</h2>
+<h3 id="31-客观参数对照自算"><a class="header-anchor" aria-label="Permalink to 3.1 客观参数对照（自算）" href="#31-客观参数对照自算">#</a>3.1 客观参数对照（自算）</h3>
+<table>
+<thead>
+<tr>
+<th>片子</th>
+<th>时长</th>
+<th>播放</th>
+<th>镜头数</th>
+<th>平均镜长</th>
+<th>中位</th>
+<th>开场30s</th>
+<th>结尾30s</th>
+<th>&lt;1s占比</th>
+<th>&gt;5s占比</th>
+<th>语速</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>呆呆·泰山</td>
+<td>25:23</td>
+<td>65.9万</td>
+<td>149</td>
+<td>10.22s</td>
+<td>6.30s</td>
+<td>9</td>
+<td>1</td>
+<td>4.0%</td>
+<td>63.1%</td>
+<td>123</td>
+</tr>
+<tr>
+<td>呆呆·峨眉山</td>
+<td>33:20</td>
+<td>41.9万</td>
+<td>231</td>
+<td>8.66s</td>
+<td>4.90s</td>
+<td>13</td>
+<td>6</td>
+<td>9.5%</td>
+<td>48.5%</td>
+<td>135</td>
+</tr>
+<tr>
+<td>呆呆·虎跳峡</td>
+<td>40:39</td>
+<td>29.9万</td>
+<td>287</td>
+<td>8.50s</td>
+<td>5.04s</td>
+<td>12</td>
+<td>9</td>
+<td>0%</td>
+<td>50.5%</td>
+<td>150</td>
+</tr>
+<tr>
+<td>呆呆·雨崩</td>
+<td>27:28</td>
+<td>22.6万</td>
+<td>220</td>
+<td>7.49s</td>
+<td>4.10s</td>
+<td>13</td>
+<td>3</td>
+<td>5.9%</td>
+<td>42.7%</td>
+<td>128</td>
+</tr>
+<tr>
+<td>Links·最孤独的房子</td>
+<td>29:22</td>
+<td>1139万</td>
+<td>243</td>
+<td>7.25s</td>
+<td>4.64s</td>
+<td>3</td>
+<td>1</td>
+<td>0.8%</td>
+<td>44.9%</td>
+<td>110</td>
+</tr>
+<tr>
+<td>Links·冈仁波齐</td>
+<td>22:37</td>
+<td>399万</td>
+<td>242</td>
+<td>5.61s</td>
+<td>4.30s</td>
+<td>7</td>
+<td>4</td>
+<td>2.5%</td>
+<td>41.7%</td>
+<td>204</td>
+</tr>
+<tr>
+<td>Links·库拉岗日</td>
+<td>37:33</td>
+<td>675万</td>
+<td>405</td>
+<td>5.56s</td>
+<td>4.07s</td>
+<td>3</td>
+<td>5</td>
+<td>2.0%</td>
+<td>36.8%</td>
+<td>199</td>
+</tr>
+<tr>
+<td>Links·第一座雪山</td>
+<td>55:11</td>
+<td>672万</td>
+<td>476</td>
+<td>6.96s</td>
+<td>4.31s</td>
+<td>9</td>
+<td>1</td>
+<td>2.3%</td>
+<td>41.2%</td>
+<td>163</td>
+</tr>
+</tbody></table>
+<p><strong>四个可直接引用的规律</strong></p>
+<ol>
+<li><strong>头尾最快、金句处最慢</strong>：峨眉山第 0 分钟 29 镜（平均 2.1 秒/镜）全片最碎，第 13 分钟降到
+4 镜（平均 29.9 秒/镜，金句“别来了”落地），片尾蒙太奇又回快；虎跳峡第 0 分钟 19 镜、
+结尾第 39 分钟 17 镜（平均 2.9 秒/镜）—— 快切只放在<strong>开场和收尾</strong>。</li>
+<li><strong>长镜只用在两个位置</strong>：连续口播（虎跳峡 27:59–29:45 单镜 106 秒不切；
+雪山片 34:00 窗口内含 191.6 秒一镜到底）和爬升最难段（30–70 秒主观长镜）。
+<strong>口播时绝不切画面</strong>，这是两条路线共有的硬规则。</li>
+<li><strong>一镜到底的口播长镜不是缺点</strong>：它反而制造“陪伴感”，是呆呆派的标志。</li>
+<li><strong>越新的片子镜长越短</strong>（呆呆 10.2s → 7.5s；语速 123 → 150），短视频化趋势不可逆。</li>
+</ol>
+<h3 id="32-呆呆派的五个可复制镜头序列"><a class="header-anchor" aria-label="Permalink to 3.2 呆呆派的五个可复制镜头序列" href="#32-呆呆派的五个可复制镜头序列">#</a>3.2 呆呆派的五个可复制镜头序列</h3>
+<ol>
+<li><strong>开场悬念</strong>：<code>[目的地最贵空镜 ×3–5 快切]</code> 或 <code>[打卡牌/路牌特写 + 悬念花字]</code></li>
+<li><strong>落地/节点</strong>：<code>[广场入口广角 → 手指指山 → 长焦怼主峰 → 手机屏幕/手表报时间 → 自拍口播定计划]</code></li>
+<li><strong>爬升段</strong>（最好用的一条）：<code>[大全景仰拍台阶人流 → 低角度拍腿/登山杖 → 石面光影特写 → 一句自嘲字幕]</code></li>
+<li><strong>补给</strong>：<code>[食物俯拍连拍 → 小确幸解说]</code></li>
+<li><strong>收尾</strong>：<code>[前景框住的远景 → 信物特写 → 长文板字幕/金句]</code></li>
+</ol>
+<p>设备特征：<strong>0 航拍、0 稳定器大调度</strong>，全靠手持 + 自拍杆 + 特写密度 + 字幕撑节奏。</p>
+<h3 id="33-links-派的四个可复制镜头序列"><a class="header-anchor" aria-label="Permalink to 3.3 Links 派的四个可复制镜头序列" href="#33-links-派的四个可复制镜头序列">#</a>3.3 Links 派的四个可复制镜头序列</h3>
+<ol>
+<li><code>[自拍口播抛悬念 → 航拍大全景 ×6 连拍 → 主角背影跟拍 → 日落航拍]</code></li>
+<li><code>[结论式口播钩子 → 风光/信仰蒙太奇 8–9 镜 → 疑问句转场 → 切入行程]</code></li>
+<li><code>[双人对镜口播 20–50s 不切 → 空镜组撤对白做呼吸 → 信息浮层（海拔/血氧）转场]</code></li>
+<li><code>[长焦空镜 → 人山比例大远景 → 稳定器跟拍背影起步]</code></li>
+</ol>
+<p>镜头类型分布（4 条归并估计）：自拍口播 ~25%、航拍 ~20%、稳定器跟随 ~15%、
+特写空镜 ~15%、手持 POV ~10%、延时/慢动作 ~5%、地图动画/画中画 ~5%。</p>
+<p>两人同行分工（库拉岗日，单人可放弃，双人强烈建议抄）：
+<strong>A 机自拍杆出口播与花絮，B 机稳定器 + 长焦拍对方工作照与跟拍</strong>，同一动作两台机位各留一条。</p>
+<h3 id="34-川西雪山专用拍法最贴合你的素材"><a class="header-anchor" aria-label="Permalink to 3.4 川西/雪山专用拍法（最贴合你的素材）" href="#34-川西雪山专用拍法最贴合你的素材">#</a>3.4 川西/雪山专用拍法（最贴合你的素材）</h3>
+<ul>
+<li><strong>海拔不靠数字靠体感</strong>：俯视视角造高度感 → 用“听不到汽车声了”做听觉减法 →
+“上到一定海拔开始刮风、开始加衣服” → 画面浮层再打一次海拔数字 → 高点俯拍人物在脊线上（人极小）用比例说话</li>
+<li><strong>困难要每 40 秒给一个具体障碍</strong>：低角度脚印特写、装备失效（“穿了雪靴还这么陷”）、
+实体障碍（倒木/水沟）、天气焦虑（“那边是不是黑云”）、体感台词（“每一步都是不确定性”）</li>
+<li><strong>缺氧可视化</strong>：每上升 300–500m 拍一次血氧仪屏幕极特写 + 对镜报数字（心率 112 / 血氧 81）</li>
+<li><strong>经幡三层拍法</strong>：逆光特写 → 框景 POV → 航拍收尾（守风 15 秒以上）</li>
+<li><strong>日照金山</strong>：中长焦压缩（推测 100–300mm），白塔/经幡/屋檐做前景，50–64 秒固定机位延时，
+<strong>延时期间不放字幕不口播</strong>（雨崩 8:18–9:09 拍金山、7:09–8:13 拍月照银山，都是单镜 50–64 秒）</li>
+<li><strong>登顶六拍</strong>：动员句 → 独走留白（60 秒左右）→ 背跟大全景（人很小）→
+POV 特写（手套 + 登山杖握把剪影）→ 无人雪坡双轨迹空镜 → 航拍收</li>
+<li><strong>登雪山要先讲难度再给成就</strong>：困难段长度应是登顶段的 2 倍以上</li>
+</ul>
+<hr>
+<h2 id="4-剪辑节奏给你片子的具体参数"><a class="header-anchor" aria-label="Permalink to 4. 剪辑节奏：给你片子的具体参数" href="#4-剪辑节奏给你片子的具体参数">#</a>4. 剪辑节奏：给你片子的具体参数</h2>
+<p>按 <strong>15–25 分钟成片、单人手持</strong> 设计：</p>
+<ul>
+<li>开场 0:00–0:30：无旁白蒙太奇，3–5 个空镜，2–3 秒一镜（大约 10–13 个镜头）</li>
+<li>主体：平均镜长 <strong>7–9 秒</strong>，中位 <strong>4–5 秒</strong>，&gt;5 秒长镜占 <strong>45–60%</strong>，1 秒内碎镜 &lt;5%</li>
+<li>全片只放 <strong>3 处快切</strong>：开场、进入新地形、片尾蒙太奇（各 2–3 分钟，2.5–4 秒/镜）</li>
+<li>每 10–15 分钟设一个“副本”小目标（GoPro 视角/垭口/营地），每段结尾给一次迷你高潮</li>
+<li>30–40% 位置放一次低谷，谷底镜长拉到 25–50 秒</li>
+<li>高潮段：撤旁白，静默 2–3 分钟，音乐 + 现场声接管</li>
+<li>收尾 30 秒：给长镜或延时（不要快切），金句压住</li>
+</ul>
+<hr>
+<h2 id="5-声音与包装"><a class="header-anchor" aria-label="Permalink to 5. 声音与包装" href="#5-声音与包装">#</a>5. 声音与包装</h2>
+<p><strong>旁白覆盖率</strong>：呆呆 4 条 98.5–100%，Links 4 条 100%——<strong>都是“全程有人说话”的片子</strong>。
+留白只出现在两处：开场冷蒙太奇、高潮/延时/登顶段。</p>
+<p><strong>文案双轨制</strong>（Links 尤其明显）：</p>
+<ul>
+<li>书面语旁白：负责数据锚点、地理科普、<strong>跨时间的过渡句</strong>
+（“特罗姆瑟的夜景让我们几乎忘记了时差。吃完晚饭后，我们就一觉昏睡到了早晨六点。”——一句话跨过一整夜）</li>
+<li>现场碎口语：“太美了吧”“哇”“有了”“可以可以”——负责真实感</li>
+</ul>
+<p><strong>字幕与花字</strong>：</p>
+<ul>
+<li>呆呆派：字幕常驻底部（白色黑描边），花字用于悬念句/金句，公里数·名次·海拔单独做花字</li>
+<li>Links 派：极省——仅底部白字幕 + 关键节点信息浮层（航线海拔卡、地图里程卡、手表 47.32km）、
+换国家/换段时打一次标题条（如画面中央 “NORWAY”）、片尾 logo 落版；基本不做转场特效，硬切为主</li>
+</ul>
+<hr>
+<h2 id="6-给你的执行方案"><a class="header-anchor" aria-label="Permalink to 6. 给你的执行方案" href="#6-给你的执行方案">#</a>6. 给你的执行方案</h2>
+<h3 id="61-开拍前脚本模板可直接填"><a class="header-anchor" aria-label="Permalink to 6.1 开拍前：脚本模板（可直接填）" href="#61-开拍前脚本模板可直接填">#</a>6.1 开拍前：脚本模板（可直接填）</h3>
+<div class="code-block"><span class="line-number-rows" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span><pre><code>0:00–0:30  冷开场  ⣿ 航拍/大全景 3–5 个快切 + 旁白：地理奇观 + 权威背书（不说自己是谁，只给&quot;世界级&quot;）
+0:30–1:00  钩子接力 ⣿ 一句反问 + 一句体感（&quot;我离雪山又更近了一点&quot;）
+1:00–2:00  出发交代 ⣿ 时间 + 起点 + 交通 + 一句地理科普；喊口号
+2:00–3:00  立目标  ⣿ 今天走多少公里 / 爬升多少 / 到几点；给一句不祥预感
+3:00–X     行程段① ⣿ 立 flag → 吃力自嘲 → 脚部特写 + 节点路牌 + 报时间
+X          节点高潮 ⣿ 到达第一个海子/垭口：先慢后爆，甩一个“数字+名次”
+……         行程段②③ ⣿ 新地形 + 一次意外/低谷（下雨、迷路、队友崩溃）
+倒数15%    情绪高点 ⣿ 登顶/日照金山：撤旁白 2–3 分钟，长镜 + 延时
+最后 3–8%  收尾    ⣿ 把祝福/意义还给观众 + 下期预告 + 求赞
+</code></pre></div>
+<h3 id="62-拍摄中必拍镜头清单每个阶段一条"><a class="header-anchor" aria-label="Permalink to 6.2 拍摄中：必拍镜头清单（每个阶段一条）" href="#62-拍摄中必拍镜头清单每个阶段一条">#</a>6.2 拍摄中：必拍镜头清单（每个阶段一条）</h3>
+<ul>
+<li>出发前：打卡牌/路牌特写、报时间的手机或手表屏幕、背包+登山杖（装备铺垫）</li>
+<li>每个爬升段开头：<strong>脚 + 杖踩过路面的低角度特写（1–3 秒）</strong>（两条路线都固定用这一招）</li>
+<li>每个节点：路牌特写 → 到达全景 → 对镜口播 20–30 秒（长镜不切）</li>
+<li>体力段：喘气声、心率/血氧仪屏幕特写、回头俯视来路</li>
+<li>风景段：至少 1 个 50–60 秒固定机位延时（日出/日照金山/星轨/云），期间不说话</li>
+<li>人物：背影跟拍（低角度）、人山比例大远景（人极小）、独走最后一段</li>
+<li>收尾：信物/纪念品特写、前景框住的远景、对镜说金句</li>
+</ul>
+<h3 id="63-剪辑-sop"><a class="header-anchor" aria-label="Permalink to 6.3 剪辑 SOP" href="#63-剪辑-sop">#</a>6.3 剪辑 SOP</h3>
+<ol>
+<li>粗剪：按脚本模板的时间轴把素材铺成 8–10 个段落</li>
+<li>定节奏：主体平均镜长调到 7–9 秒；只留开场/新地形/片尾三处快切</li>
+<li>口播段落<strong>不切画面</strong>（同一机位扛 20–100 秒）</li>
+<li>高潮段撤旁白：留 2–3 分钟给音乐 + 现场声</li>
+<li>上字幕：底部白字黑描边常驻；公里/海拔/名次做花字；金句单独做一次金句卡</li>
+<li>调色：统一一个 LUT；Links 派那种“逆光 + 光晕”签名镜至少留 1–2 个</li>
+<li>包装：换段打一次标题条；片尾 logo 落版</li>
+<li>完片时长建议 <strong>15–22 分钟</strong>（素材比大致 1:8–1:15）</li>
+</ol>
+<h3 id="64-links-派三个便宜但显贵的动作一定要加"><a class="header-anchor" aria-label="Permalink to 6.4 Links 派三个“便宜但显贵”的动作（一定要加）" href="#64-links-派三个便宜但显贵的动作一定要加">#</a>6.4 Links 派三个“便宜但显贵”的动作（一定要加）</h3>
+<ol>
+<li><strong>航拍/高点大全景</strong>（哪怕只有手机 + 高处）——开场和换段各用一个，气质立刻不同</li>
+<li><strong>一次 50–60 秒固定机位延时</strong>（日照金山/星轨/云海），期间不放字幕不说话</li>
+<li><strong>高潮段撤旁白</strong>：把口播全删，只留音乐和现场声 2–3 分钟</li>
+</ol>
+<hr>
+<h2 id="7-素材索引与复用"><a class="header-anchor" aria-label="Permalink to 7. 素材索引与复用" href="#7-素材索引与复用">#</a>7. 素材索引与复用</h2>
+<table>
+<thead>
+<tr>
+<th>片子</th>
+<th>BVID</th>
+<th>时长</th>
+<th>播放</th>
+<th>明细报告</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>呆呆·泰山</td>
+<td>BV1Ub421a7da</td>
+<td>25:23</td>
+<td>65.9万</td>
+<td>out/BV1Ub421a7da/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>呆呆·峨眉山</td>
+<td>BV1rwGMzTEPw</td>
+<td>33:20</td>
+<td>41.9万</td>
+<td>out/BV1rwGMzTEPw/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>呆呆·虎跳峡</td>
+<td>BV1Djo8BGEXF</td>
+<td>40:39</td>
+<td>29.9万</td>
+<td>out/BV1Djo8BGEXF/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>呆呆·雨崩</td>
+<td>BV1uC1PBzENB</td>
+<td>27:28</td>
+<td>22.6万</td>
+<td>out/BV1uC1PBzENB/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>Links·最孤独的房子</td>
+<td>BV1uparzhEjs</td>
+<td>29:22</td>
+<td>1139万</td>
+<td>out/BV1uparzhEjs/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>Links·库拉岗日</td>
+<td>BV1jy2CBNEDL</td>
+<td>37:33</td>
+<td>675万</td>
+<td>out/BV1jy2CBNEDL/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>Links·第一座雪山</td>
+<td>BV1SSQLBREVV</td>
+<td>55:11</td>
+<td>672万</td>
+<td>out/BV1SSQLBREVV/report_{script,shots}.md</td>
+</tr>
+<tr>
+<td>Links·冈仁波齐</td>
+<td>BV1YyCCBWEa3</td>
+<td>22:37</td>
+<td>399万</td>
+<td>out/BV1YyCCBWEa3/report_{script,shots}.md</td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：《和李现，攀登人生第一座雪山》实际拍摄地是<strong>挪威特罗姆瑟/塞尼亚</strong>（不是西藏），
+目标峰弗洛比约恩 611m，它的“雪山”卖点是雪况与野雪无足迹——你做川西片时，
+“海拔数字”要换成“雪深 / 无路迹 / 风”。</p>
+<p><strong>可复用工具链</strong>（都在 <code>/home/mgt/projects/bili-vlog-research/</code>）：</p>
+<ul>
+<li><code>pipeline_video.py</code>：一条命令跑完 下载(aria2c 16 连接) → 场景检测分镜表 → 5 秒抽帧接触表 → ASR</li>
+<li><code>post_analyze.py</code>：从 ASR 逐句时间码算语速/语音覆盖/无旁白段 + 逐分钟镜头节奏曲线</li>
+<li><code>extra_sheets.py</code>：开场 90 秒（2 秒/帧）与片尾 40 秒的密采样接触表</li>
+<li><code>digest.py</code>：把多份报告压成摘要</li>
+<li><code>TEMPLATE_分镜表.csv</code>：可直接填的分镜表模板</li>
+<li>坑：B 站未登录下载走 PCDN，单连接只有 ~130 KB/s，必须 <code>aria2c -x16 -s16</code>（→ 13 MB/s）</li>
+</ul>
+
+</article>
+</div>
+  <script>
+(() => {
+  const links = new Map();
+  document.querySelectorAll('.toc a[href^="#"]').forEach((a) => {
+    links.set(decodeURIComponent(a.getAttribute('href').slice(1)), a);
+  });
+  if (!links.size) return;
+  const headings = [];
+  links.forEach((_, id) => {
+    const el = document.getElementById(id);
+    if (el) headings.push(el);
+  });
+  if (!headings.length) return;
+  let active = null;
+  let lockUntil = 0;
+  const setActive = (link) => {
+    if (link === active) return;
+    if (active) active.classList.remove('active');
+    if (link) link.classList.add('active');
+    active = link;
+  };
+  const update = () => {
+    if (Date.now() < lockUntil) return;
+    const threshold = 80;
+    let current = null;
+    for (const h of headings) {
+      if (h.getBoundingClientRect().top <= threshold) current = h;
+      else break;
+    }
+    if (!current) current = headings[0];
+    setActive(links.get(current.id));
+  };
+  const setActiveByHash = () => {
+    if (!location.hash) return false;
+    const id = decodeURIComponent(location.hash.slice(1));
+    const link = links.get(id);
+    if (!link) return false;
+    setActive(link);
+    lockUntil = Date.now() + 800;
+    return true;
+  };
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { ticking = false; update(); });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  window.addEventListener('hashchange', setActiveByHash);
+  if (!setActiveByHash()) update();
+})();
+</script>
+</html>
