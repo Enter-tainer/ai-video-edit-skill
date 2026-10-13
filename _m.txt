@@ -1,6 +1,0 @@
-补关键地点表与 2D 距离查询（5.7）：入库就建表，查最近地点不再靠回忆
-
-- key_places DDL（name/kind/lat/lon/ele/source/note），source 必须 NOT NULL
-- 等距圆柱近似距离 SQL，实测与 haversine 差 +0.11%
-- 实测：11 个地点 0.0ms、30 万轨迹点 72.4ms -> 不要上空间索引
-- 入库步骤产物加上关键地点表
