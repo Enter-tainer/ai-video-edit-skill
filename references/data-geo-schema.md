@@ -417,6 +417,79 @@ GROUP BY a.day, g.place ORDER BY a.day, n DESC;
 > **一句话**：**画面上的每个地名与海拔，都必须能追到 `asset_geo` 的一行**；
 > 追不到（或 `match_quality != exact`）就写"前往…途中"，或者干脆不写。
 
+### 5.7 关键地点表 + 2D 距离查询：别瞎猜"这里是哪" ⭐
+
+**入库时就该建一张关键地点表**（而不是等要写花字时才去查地图）：
+
+```sql
+CREATE TABLE IF NOT EXISTS key_places (
+  id         INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL,      -- 上屏用的地名，尽量与 asset_geo.place 的写法对齐
+  kind       TEXT,               -- 景区/垭口/乡镇/服务区/湖/寺庙/停车场…
+  lat        REAL NOT NULL,
+  lon        REAL NOT NULL,
+  ele        REAL,               -- 海拔（m），可选
+  source     TEXT NOT NULL,      -- ⭐ 这个坐标哪来的：权威记录/地图/实地/人工估
+  note       TEXT,               -- 口径与不确定度（必须写，见 §6 的教训）
+  updated_at TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_key_places_name ON key_places(name);
+```
+
+**为什么 `source` 是 NOT NULL**：这份文档里最贵的一节就是"**口径**"（§6）——
+同一个地点不同来源能差几十米海拔、几公里里程。坐标也一样：
+**权威记录 / 地图量取 / 实地 GPS / 人工估，四者的可信度完全不同**，不标来源就没法判断能不能上屏。
+
+#### 查询：距离最近的关键地点
+
+```sql
+-- 等距圆柱近似：实测与 haversine 相差 +0.11%（连 250 km 外也只差 0.11%），够用
+SELECT p.name, p.kind, p.ele, p.source,
+       111320.0 * sqrt(
+         (p.lat - :lat)*(p.lat - :lat) +
+         ((p.lon - :lon) * cos(radians((p.lat + :lat)/2.0))) *
+         ((p.lon - :lon) * cos(radians((p.lat + :lat)/2.0)))
+       ) AS dist_m
+FROM key_places p
+ORDER BY dist_m
+LIMIT 5;
+```
+
+**"这条素材最近的关键地点"**（把三张表串起来）：
+
+```sql
+SELECT a.asset_no, a.shot_at_local, g.place AS geo_place, p.name AS nearest_place,
+       p.kind, p.source, <上面的距离表达式> AS dist_m
+FROM assets a
+JOIN asset_geo   g ON g.asset_id = a.id
+JOIN key_places  p
+WHERE a.asset_no = ?
+ORDER BY dist_m LIMIT 3;
+```
+
+#### ⚠️ 不要为这个上空间索引
+
+**实测**（同一个库、同一台机器）：
+
+| 做法 | 规模 | 耗时 |
+|---|---|---|
+| **纯 SQL + `ORDER BY`** | **11 个关键地点** | **0.0 ms** |
+| R\*Tree 粗筛（内置） | 同样 11 个 | 0.0 ms —— **毫无意义** |
+| 纯 SQL 全表扫 + 排序 | **297,761 个轨迹点** | **72.4 ms** |
+
+**结论：无脑算距离然后 `ORDER BY` 就行。** 关键地点是几十到几百行；连 30 万个轨迹点全扫也只要 72 ms。
+上空间索引（`R*Tree` / `SpatiaLite`）在这个规模是**纯粹的复杂度开销**。
+
+**什么时候才值得上**：
+- 行数到**百万级**、且要在**交互式**场景里反复查（不是脚本里跑一次）；
+- 或者需要**真正的空间关系**（多边形包含、最近邻 K、路径相交）——那要用 `geopoly`（内置）或 `SpatiaLite`（需额外加载；**本环境未安装**）。
+
+**本环境实测可用**：SQLite **3.53.1**，数学函数（`cos`/`radians`/`sqrt`）✓、`R*Tree` ✓、`geopoly` ✓、`SpatiaLite` ✗。
+
+> **用法**：把"这里是哪"变成一次 SQL，而不是一次回忆。
+> 写花字前先跑一遍最近地点查询，距离对不上（例如算出来 40 km）就说明**你记错了**——
+> 这正是"避免瞎猜"最便宜的做法。
+
 ---
 
 ## 6. 里程 / 爬升：口径问题（本文最贵的一节）
