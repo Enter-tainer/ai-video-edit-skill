@@ -374,6 +374,49 @@ SELECT day, COUNT(*) FROM asset_geo g JOIN assets a ON a.id=g.asset_id
 所以 `calibrate_route.py` 的存在意义就是**用外部口径覆盖自动结果并留下一条 `notes` 说明**。
 **规则：地名一旦被外部口径覆盖，就把覆盖动作写成一条 `notes`（scope=global），别只改字段。**
 
+### 5.6 查"这条素材是在哪拍的"：一条 SQL 与四个坑 ⭐
+
+**唯一可信来源是点级关联表 `asset_geo`**，不是 `days.location`。
+（`days.location` 是**人写的当天概述**；实测它和照片 EXIF GPS 冲突过一次——
+概述写 A 地、照片却在 B 地。**上屏的地名一律走 `asset_geo`**，`days` 只用来给整章定调。）
+
+```sql
+-- 单条：这条素材在哪拍的、海拔多少、是靠不靠得住
+SELECT a.asset_no, a.shot_at_local,
+       g.place, g.area, g.lat, g.lon, g.ele,
+       g.dt_sec, g.match_quality, g.move_mode
+FROM assets a JOIN asset_geo g ON g.asset_id = a.id
+WHERE a.asset_no = ?;
+
+-- 按天：某天用了哪些地方（做章节字幕前先看一眼）
+SELECT a.day, g.place, COUNT(*) n
+FROM assets a JOIN asset_geo g ON g.asset_id = a.id
+GROUP BY a.day, g.place ORDER BY a.day, n DESC;
+```
+
+**四个坑（都是实测踩出来的）**：
+
+1. **先看 `match_quality` 与 `dt_sec`，再决定这个地名能不能用。**
+   实测 151 条：`exact` **148** / `near` 1 / `far` 1 / `none` 1；
+   `dt_sec`（素材时刻与所匹配轨迹点的时差）平均 **6.1s**、**最大 718s**，只有 **3 条 > 5s**、**2 条 > 30s**。
+   **判据：`match_quality != 'exact'` 或 `|dt_sec| > 30s` 的，地名不能直接写进花字**——
+   它可能对到了当天另一个时间段的轨迹点上，写出来就是错的。
+2. **`place` 是逆地理编码的结果，粒度不保证。**
+   实测同一天的素材可能只给到县级（例如只写"某县"），**别把它当成"这个镜头的确切位置"**。
+   要更细只能自己按 `lat/lon` 反查，并接受它也只是近似。
+3. **`cum_dist_km` / `cum_ascent_m` 必须和 `move_mode` 一起读。**
+   `move_mode ∈ {walk, drive}`（实测 128 / 23），累计列是**按行程方式分段累加**的——
+   不读 `move_mode` 就会写出"在车上说今天走了几公里"这种错。
+4. **"最高点/最陡点"这类极值必须用 SQL 从库里排序复算，不能凭印象。**
+   早期文档曾把"全程最高点在哪个拍摄日"写错，按 `gpx_points.ele` / `asset_geo.ele` 排序才发现。
+   ```sql
+   SELECT asset_no, shot_at_local, ele FROM assets a
+     JOIN asset_geo g ON g.asset_id = a.id ORDER BY g.ele DESC LIMIT 5;
+   ```
+
+> **一句话**：**画面上的每个地名与海拔，都必须能追到 `asset_geo` 的一行**；
+> 追不到（或 `match_quality != exact`）就写"前往…途中"，或者干脆不写。
+
 ---
 
 ## 6. 里程 / 爬升：口径问题（本文最贵的一节）
